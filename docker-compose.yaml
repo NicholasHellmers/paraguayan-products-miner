@@ -20,12 +20,22 @@ services:
     depends_on:
       - db
     command: bash -c "while !</dev/tcp/db/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
+  api:
+    env_file: .env
+    build: ./src/api
+    volumes:
+      - ./src/api:/app
+    networks:
+      - miner-app
+    depends_on:
+      - db
   db:
     image: mongo:latest
     ports:
       - '27017:27017'
     env_file:
       - .env
+    restart: always
     networks:
       - miner-app
     volumes:

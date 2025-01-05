@@ -2,6 +2,8 @@ import requests
 import concurrent.futures
 from dataclasses import dataclass
 from unidecode import unidecode
+import pymongo
+from hashlib import md5
 
 @dataclass
 class Category:
@@ -12,6 +14,7 @@ class Category:
 
 @dataclass
 class Product:
+    product_id: str
     code: int
     name: str
     price: float
@@ -63,15 +66,17 @@ def mine_category(category: Category) -> (list[Product] | None):
             response = requests.get(f'https://api.app.biggie.com.py/api/articles?take=50&skip={len(products_list)}&classificationName={category.slug}')
             if response.status_code == 200:
                 products = response.json()
-                count = len(products['items'])
                 if products['items']:
                     for product in products['items']:
-                        products_list.append(Product(product['code'], 
+                        url: str = f"https://biggie.com.py/item/{unidecode(product['name'].lower()).replace(' ', '-')}-{product['code']}"
+                        product_id = md5(url.encode()).hexdigest()
+                        products_list.append(Product(product_id,
+                                                     product['code'], 
                                                      product['name'], 
                                                      product['price'], 
                                                      product['isOnOffer'], 
                                                      product['images'][0]['src'] if product['images'] else "https://biggie.com.py/_nuxt/img/bdefault1.2002ae6.png",
-                                                     f"https://biggie.com.py/item/{unidecode(product['name'].lower()).replace(' ', '-')}-{product['code']}", 
+                                                     url, 
                                                      category.name))
 
                 else:
@@ -90,6 +95,7 @@ def mine_category(category: Category) -> (list[Product] | None):
     return products_list
 
 def main():
+
     categories: list[Category] = get_categories()
     if categories:
         print('Categories retreived successfully...')
@@ -103,9 +109,9 @@ def main():
 
 
         with open('biggie_products.csv', 'w') as file:
-            file.write('Code,Name,Price,Discounted,Image,Product URL,Category\n')
+            file.write('product_id,code,name,price,is_discounted,image_url,product_url,category_name\n')
             for product in products_list:
-                file.write(f"{product.code},{product.name},{product.price},{product.is_discounted},{product.image_url},{product.product_url},{product.category_name}\n")
+                file.write(f'{product.product_id},{product.code},{product.name},{product.price},{product.is_discounted},{product.image_url},{product.product_url},{product.category_name}\n')
 
         print('Products saved to biggie_products.csv...')
 
