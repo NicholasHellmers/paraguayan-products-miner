@@ -1,25 +1,25 @@
 version: '3.9'
 services:
-  miner_superseis:
-    env_file: .env
-    build: ./src/miners/osm
-    volumes:
-      - ./src/miners/osm:/app
-    networks:
-      - miner-app
-    depends_on:
-      - db
-    command: bash -c "while !</dev/tcp/db/5432; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
+  # miner_superseis:
+  #   env_file: .env
+  #   build: ./src/miners/superseis
+  #   volumes:
+  #     - ./src/miners/superseis:/app
+  #   networks:
+  #     - miner-app
+  #   depends_on:
+  #     - db
+  #   command: bash -c "while !</dev/tcp/db/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
   miner_biggie:
     env_file: .env
-    build: ./src/miners/osm
+    build: ./src/miners/biggie
     volumes:
-      - ./src/miners/osm:/app
+      - ./src/miners/biggie:/app
     networks:
       - miner-app
     depends_on:
       - db
-    command: bash -c "while !</dev/tcp/db/5432; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
+    command: bash -c "while !</dev/tcp/db/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
   db:
     image: mongo:latest
     ports:
