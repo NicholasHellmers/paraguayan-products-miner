@@ -5,6 +5,8 @@ services:
     build: ./src/miners/osm
     volumes:
       - ./src/miners/osm:/app
+    networks:
+      - miner-app
     depends_on:
       - db
     command: bash -c "while !</dev/tcp/db/5432; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
@@ -13,19 +15,26 @@ services:
     build: ./src/miners/osm
     volumes:
       - ./src/miners/osm:/app
+    networks:
+      - miner-app
     depends_on:
       - db
     command: bash -c "while !</dev/tcp/db/5432; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
   db:
     image: mongo:latest
-    env_file: .env
-    expose:
-      - '5432'
     ports:
-      - '5432:5432'
+      - '27017:27017'
+    env_file:
+      - .env
+    networks:
+      - miner-app
     volumes:
-      - db:/var/lib/postgresql/data
-      - ./src/db:/docker-entrypoint-initdb.d
+      - ./db/mongo/:/data/db
+
+networks:
+  miner-app:
+    driver: bridge
 
 volumes:
   db:
+    driver: local
