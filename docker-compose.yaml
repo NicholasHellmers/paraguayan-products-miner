@@ -1,50 +1,44 @@
 version: '3.9'
 services:
-  # miner_superseis:
+  # miner_biggie:
   #   env_file: .env
-  #   build: ./src/miners/superseis
+  #   build: ./src/miners/biggie
   #   volumes:
-  #     - ./src/miners/superseis:/app
+  #     - ./src/miners/biggie:/app
   #   networks:
   #     - miner-app
   #   depends_on:
-  #     - db
-  #   command: bash -c "while !</dev/tcp/db/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
-  miner_biggie:
-    env_file: .env
-    build: ./src/miners/biggie
-    volumes:
-      - ./src/miners/biggie:/app
-    networks:
-      - miner-app
-    depends_on:
-      - db
-    command: bash -c "while !</dev/tcp/db/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
+  #     - mongo
+  #   command: bash -c "while !</dev/tcp/mongo/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
   api:
-    env_file: .env
-    build: ./src/api
-    volumes:
-      - ./src/api:/app
+    build:
+      context: ./src/api
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_URI=${MONGO_URI}
     networks:
       - miner-app
     depends_on:
-      - db
-  db:
+      - mongo
+  mongo:
     image: mongo:latest
     ports:
       - '27017:27017'
-    env_file:
-      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     restart: always
     networks:
       - miner-app
     volumes:
-      - ./db/mongo/:/data/db
+      - mongo-data:/data/db
+      - ./src/mongo-data/init.js:/docker-entrypoint-initdb.d/init.js
 
 networks:
   miner-app:
     driver: bridge
 
 volumes:
-  db:
+  mongo-data:
     driver: local

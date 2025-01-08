@@ -2,7 +2,6 @@ import requests
 import concurrent.futures
 from dataclasses import dataclass
 from unidecode import unidecode
-import pymongo
 from hashlib import md5
 
 @dataclass
