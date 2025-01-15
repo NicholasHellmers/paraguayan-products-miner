@@ -9,7 +9,7 @@ type Product struct {
 	Code         string             `json:"code,omitempty" validate:"required"`
 	Name         string             `json:"name,omitempty" validate:"required"`
 	Price        int                `json:"price,omitempty" validate:"required"`
-	IsDiscounted string             `json:"is_discounted,omitempty" validate:"required"`
+	IsDiscounted *bool              `json:"is_discounted,omitempty" validate:"required"`
 	ImageUrl     string             `json:"image_url,omitempty" validate:"required"`
 	ProductUrl   string             `json:"product_url,omitempty" validate:"required"`
 	CategoryName string             `json:"category_name,omitempty" validate:"required"`

@@ -61,6 +61,66 @@ func CreateProduct(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(responses.ProductResponse{Status: http.StatusCreated, Message: "success", Data: &fiber.Map{"success_message": result}})
 }
 
+func CreateProducts(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	var products []models.Product
+	defer cancel()
+
+	//validate the request body
+	if err := c.BodyParser(&products); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": err.Error()}})
+	}
+
+	//use the validator library to validate required fields
+	for _, product := range products {
+		if validationErr := productValidate.Struct(&product); validationErr != nil {
+			return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": validationErr.Error()}})
+		}
+	}
+
+	// product_id,code,name,price,is_discounted,image_url,product_url,category_name
+	var newProducts []interface{}
+	for _, product := range products {
+
+		newProduct := models.Product{
+			Id:           primitive.NewObjectID(),
+			MD5:          product.MD5,
+			Name:         product.Name,
+			Code:         product.Code,
+			Price:        product.Price,
+			IsDiscounted: product.IsDiscounted,
+			ImageUrl:     product.ImageUrl,
+			ProductUrl:   product.ProductUrl,
+			CategoryName: product.CategoryName,
+		}
+
+		// If one of the products is invalid, return an error
+		if validationErr := productValidate.Struct(&newProduct); validationErr != nil {
+			return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": validationErr.Error()}})
+		}
+
+		// Check if the product already exists via the MD5 hash, if it does, update the product
+		var existingProduct models.Product
+		err := productCollection.FindOne(ctx, bson.M{"md5": newProduct.MD5}).Decode(&existingProduct)
+		if err == nil {
+			_, err := productCollection.UpdateOne(ctx, bson.M{"md5": newProduct.MD5}, bson.M{"$set": newProduct})
+			if err != nil {
+				return c.Status(http.StatusInternalServerError).JSON(responses.ProductResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"error_message": err.Error()}})
+			}
+			continue
+		}
+
+		newProducts = append(newProducts, newProduct)
+	}
+
+	result, err := productCollection.InsertMany(ctx, newProducts)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(responses.ProductResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"error_message": err.Error()}})
+	}
+
+	return c.Status(http.StatusCreated).JSON(responses.ProductResponse{Status: http.StatusCreated, Message: "success", Data: &fiber.Map{"success_message": result}})
+}
+
 func GetAProduct(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	productId := c.Params("productId")

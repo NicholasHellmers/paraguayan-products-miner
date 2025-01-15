@@ -9,14 +9,14 @@ class Category:
     id: int
     name: str
     slug: str
-    ulr: str = 'https://api.app.biggie.com.py/api/articles?take=50&skip=0&classificationName={slug}'
+    url: str = 'https://api.app.biggie.com.py/api/articles?take=50&skip=0&classificationName={slug}'
 
 @dataclass
 class Product:
-    product_id: str
-    code: int
+    md5: str
+    code: str
     name: str
-    price: float
+    price: int
     is_discounted: bool
     image_url: str
     product_url: str
@@ -68,10 +68,10 @@ def mine_category(category: Category) -> (list[Product] | None):
                 if products['items']:
                     for product in products['items']:
                         url: str = f"https://biggie.com.py/item/{unidecode(product['name'].lower()).replace(' ', '-')}-{product['code']}"
-                        product_id = md5(url.encode()).hexdigest()
-                        products_list.append(Product(product_id,
+                        md5_code = md5(url.encode()).hexdigest()
+                        products_list.append(Product(md5_code,
                                                      product['code'], 
-                                                     product['name'], 
+                                                     product['name'],
                                                      product['price'], 
                                                      product['isOnOffer'], 
                                                      product['images'][0]['src'] if product['images'] else "https://biggie.com.py/_nuxt/img/bdefault1.2002ae6.png",
@@ -96,6 +96,7 @@ def mine_category(category: Category) -> (list[Product] | None):
 def main():
 
     categories: list[Category] = get_categories()
+    print(categories)
     if categories:
         print('Categories retreived successfully...')
         products_list: list[Product] = []
@@ -106,13 +107,10 @@ def main():
 
         print(f"Total products retreived: {len(products_list)}")
 
+        # send a request to the API to save the products
+        response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list])
 
-        with open('biggie_products.csv', 'w') as file:
-            file.write('product_id,code,name,price,is_discounted,image_url,product_url,category_name\n')
-            for product in products_list:
-                file.write(f'{product.product_id},{product.code},{product.name},{product.price},{product.is_discounted},{product.image_url},{product.product_url},{product.category_name}\n')
-
-        print('Products saved to biggie_products.csv...')
+        print('Products sent to the API...')
 
     else:
         print('Failed to retreive categories from Biggie API...')

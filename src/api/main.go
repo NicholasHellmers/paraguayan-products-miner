@@ -12,6 +12,8 @@ func main() {
 	//run database
 	configs.ConnectDB()
 
+	routes.InfoRoutes(app)
+
 	routes.UserRoute(app)
 
 	routes.ProductRoutes(app)

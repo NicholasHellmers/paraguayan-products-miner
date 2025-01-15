@@ -1,15 +1,16 @@
 version: '3.9'
 services:
-  # miner_biggie:
-  #   env_file: .env
-  #   build: ./src/miners/biggie
-  #   volumes:
-  #     - ./src/miners/biggie:/app
-  #   networks:
-  #     - miner-app
-  #   depends_on:
-  #     - mongo
-  #   command: bash -c "while !</dev/tcp/mongo/27017; do sleep 5; done; python3 -u main.py" # This is to wait for the db to be ready before starting the miner
+  miner_biggie:
+    env_file: .env
+    build: ./src/miners/biggie
+    volumes:
+      - ./src/miners/biggie:/app
+    networks:
+      - miner-app
+    depends_on:
+      - mongo
+      - api
+    command: sh -c "while ! curl -s http://api:8080/; do sleep 3; done && while true; do python3 -u main.py; sleep 86400; done" # This is to wait for the api to be ready before starting the miner and rerun every 24 hours
   api:
     build:
       context: ./src/api

@@ -12,7 +12,7 @@ func EnvMongoURI() string {
 		log.Fatal("MONGO_URI not found in .env file")
 	}
 
-	fmt.Println("MONGO_URI found in .env file", err)
+	fmt.Println("MONGO_URI found in .env file")
 
 	return os.Getenv("MONGO_URI")
 }
