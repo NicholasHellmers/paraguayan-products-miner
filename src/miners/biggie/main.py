@@ -34,19 +34,18 @@ def get_categories() -> (list[Category] | None):
     try:
         response = requests.get('https://api.app.biggie.com.py/api/classifications/web?take=-1')
         if response.status_code == 200:
-            print('Retreived categories from Biggie API successfully...')
+            print('[DEBUG] Retreived categories from Biggie API successfully...')
             categories = response.json()
             categories_list: list[Category] = []
             for category in categories['items']:
                 categories_list.append(Category(category['id'], category['name'].strip(), category['slug']))
             return categories_list
         else:
-            print('Invalid response from Biggie API...')
+            print('[ERROR] Invalid response from Biggie API...')
             print(response.status_code)
             return None
     except Exception as e:
-        print('Failed to retreive categories from Biggie API...')
-        print(e)
+        print('[ERROR] Failed to retreive categories from Biggie API...', e)
         return None
     
 def mine_category(category: Category) -> (list[Product] | None):
@@ -81,15 +80,15 @@ def mine_category(category: Category) -> (list[Product] | None):
                                                      category.name))
 
                 else:
-                    print(f'No products found in {category.name} category...') if not products_list else print(f'All products from {category.name} category retreived, total of {len(products_list)}...')
+                    print(f'[DEBUG] No products found in {category.name} category...') if not products_list else print(f'[DEBUG] All products from {category.name} category retreived, total of {len(products_list)}...')
                     break
             else:
-                print(f'Failed to retreive products from {category.name} category...')
+                print(f'[ERROR] Failed to retreive products from {category.name} category...')
                 print(response.status_code)
                 return None
 
         except Exception as e:
-            print(f'Failed to retreive products from {category.name} category...')
+            print(f'[ERROR] Failed to retreive products from {category.name} category...')
             print(e)
             return None
 
@@ -98,33 +97,36 @@ def mine_category(category: Category) -> (list[Product] | None):
 def main():
 
     categories: list[Category] = get_categories()
-    print(categories)
+    print(f'[DEBUG] {categories}')
     if categories:
-        print('Categories retreived successfully...')
+        print('[DEBUG] Categories retreived successfully...')
         products_list: list[Product] = []
-        print('Mining products from categories...')
+        print('[DEBUG] Mining products from categories...')
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             for category in categories:
                 products_list.extend(executor.submit(mine_category, category).result())
 
-        print(f"Total products retreived: {len(products_list)}")
+        print(f"[DEBUG] Total products retreived: {len(products_list)}")
 
         # send a request to the API to save the products
         try:
             response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list])
-            if response.status_code == 200:
-                print('Products sent to the API...')
+            if response.status_code == 201:
+                print('[DEBUG] Products sent to the API...')
+            else:
+                print('[ERROR] Failed to send products to the API...')
+                print(response.status_code)
         except Exception as e:
-            print('Failed to send products to the API...')
+            print('[ERROR] Failed to send products to the API...')
             print(e)
 
 
     else:
-        print('Failed to retreive categories from Biggie API...')
+        print('[ERROR] Failed to retreive categories from Biggie API...')
 
 if __name__ == '__main__':
-    print('Starting Biggie Miner...')
+    print('[DEBUG] Starting Biggie Miner...')
     main()
-    print('Biggie Miner finished...')
+    print('[DEBUG] Biggie Miner finished...')
     
     

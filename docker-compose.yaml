@@ -10,6 +10,16 @@ services:
     depends_on:
       - mongo
     command: bash -c "while ! curl -s http://api:8080/; do sleep 3; done; python3 -u main.py"
+  miner_casarica:
+    env_file: .env
+    build: ./src/miners/casarica
+    volumes:
+      - ./src/miners/casarica:/app
+    networks:
+      - miner-app
+    depends_on:
+      - mongo
+    command: bash -c "while ! curl -s http://api:8080/; do sleep 3; done; python3 -u main.py"
   api:
     build:
       context: ./src/api
