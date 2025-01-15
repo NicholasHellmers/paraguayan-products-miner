@@ -14,6 +14,7 @@ class Category:
 @dataclass
 class Product:
     md5: str
+    origin: str
     code: str
     name: str
     price: int
@@ -70,6 +71,7 @@ def mine_category(category: Category) -> (list[Product] | None):
                         url: str = f"https://biggie.com.py/item/{unidecode(product['name'].lower()).replace(' ', '-')}-{product['code']}"
                         md5_code = md5(url.encode()).hexdigest()
                         products_list.append(Product(md5_code,
+                                                     'biggie',
                                                      product['code'], 
                                                      product['name'],
                                                      product['price'], 
@@ -108,9 +110,14 @@ def main():
         print(f"Total products retreived: {len(products_list)}")
 
         # send a request to the API to save the products
-        response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list])
+        try:
+            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list])
+            if response.status_code == 200:
+                print('Products sent to the API...')
+        except Exception as e:
+            print('Failed to send products to the API...')
+            print(e)
 
-        print('Products sent to the API...')
 
     else:
         print('Failed to retreive categories from Biggie API...')

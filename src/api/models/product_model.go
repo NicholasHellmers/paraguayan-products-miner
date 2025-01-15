@@ -6,6 +6,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type Product struct {
 	Id           primitive.ObjectID `json:"id,omitempty"`
 	MD5          string             `json:"md5,omitempty"`
+	Origin       string             `json:"origin,omitempty"`
 	Code         string             `json:"code,omitempty" validate:"required"`
 	Name         string             `json:"name,omitempty" validate:"required"`
 	Price        int                `json:"price,omitempty" validate:"required"`

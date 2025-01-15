@@ -37,6 +37,7 @@ func CreateProduct(c *fiber.Ctx) error {
 	newProduct := models.Product{
 		Id:           primitive.NewObjectID(),
 		MD5:          product.MD5,
+		Origin:       product.Origin,
 		Name:         product.Name,
 		Code:         product.Code,
 		Price:        product.Price,
@@ -85,6 +86,7 @@ func CreateProducts(c *fiber.Ctx) error {
 		newProduct := models.Product{
 			Id:           primitive.NewObjectID(),
 			MD5:          product.MD5,
+			Origin:       product.Origin,
 			Name:         product.Name,
 			Code:         product.Code,
 			Price:        product.Price,

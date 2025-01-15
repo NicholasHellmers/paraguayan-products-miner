@@ -11,3 +11,5 @@ Data miner for paraguayan ecommerce products.
     - [ ] Superseis (https://www.superseis.com.py/)[https://www.superseis.com.py/]
     - [ ] Stock (https://www.stock.com.py/)[https://www.stock.com.py/]
     - [ ] Hendyla (https://www.hendyla.com/)[https://www.hendyla.com/]
+- [x] MongoDB setup
+- [x] Golang API

@@ -9,8 +9,7 @@ services:
       - miner-app
     depends_on:
       - mongo
-      - api
-    command: sh -c "while ! curl -s http://api:8080/; do sleep 3; done && while true; do python3 -u main.py; sleep 86400; done" # This is to wait for the api to be ready before starting the miner and rerun every 24 hours
+    command: bash -c "while ! curl -s http://api:8080/; do sleep 3; done; python3 -u main.py"
   api:
     build:
       context: ./src/api
@@ -22,6 +21,7 @@ services:
       - miner-app
     depends_on:
       - mongo
+    command: ./main
   mongo:
     image: mongo:latest
     ports:
