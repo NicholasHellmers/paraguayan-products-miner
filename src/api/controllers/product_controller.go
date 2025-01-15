@@ -19,7 +19,7 @@ var productCollection *mongo.Collection = configs.GetCollection(configs.DB, "pro
 var productValidate = validator.New()
 
 func CreateProduct(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	var product models.Product
 	defer cancel()
 
@@ -63,7 +63,7 @@ func CreateProduct(c *fiber.Ctx) error {
 }
 
 func CreateProducts(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	var products []models.Product
 	defer cancel()
 
@@ -124,7 +124,7 @@ func CreateProducts(c *fiber.Ctx) error {
 }
 
 func GetAProduct(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	productId := c.Params("productId")
 	var product models.Product
 	defer cancel()
@@ -138,7 +138,7 @@ func GetAProduct(c *fiber.Ctx) error {
 }
 
 func GetAllProducts(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	var products []models.Product
 	defer cancel()
 

@@ -62,7 +62,7 @@ def mine_category(category: Category) -> (list[Product] | None):
     products_list: list[Product] = []
     while True:
         try:
-            response = requests.get(f'https://api.app.biggie.com.py/api/articles?take=50&skip={len(products_list)}&classificationName={category.slug}', timeout=10)
+            response = requests.get(f'https://api.app.biggie.com.py/api/articles?take=50&skip={len(products_list)}&classificationName={category.slug}', timeout=20)
             if response.status_code == 200:
                 products = response.json()
                 if products['items']:
@@ -110,7 +110,7 @@ def main():
 
         # send a request to the API to save the products
         try:
-            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list], timeout=10)
+            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list], timeout=20)
             if response.status_code == 201:
                 print('[DEBUG] Products sent to the API...')
             else:

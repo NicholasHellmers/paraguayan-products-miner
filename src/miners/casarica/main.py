@@ -83,7 +83,7 @@ def mine_products(category: Category) -> (list[Product] | None):
     try:
         page_number = 1
         while True:
-            response = requests.get(f'{category.url}.{page_number}', timeout=10)
+            response = requests.get(f'{category.url}.{page_number}', timeout=20)
 
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'lxml')
@@ -146,7 +146,7 @@ def main():
             for future in concurrent.futures.as_completed(futures):
                 # send a request to the API to save the products
                 try:
-                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=10)
+                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=20)
                     if response.status_code == 201:
                         print('[DEBUG] Products sent to the API...')
                     else:
