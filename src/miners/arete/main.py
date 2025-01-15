@@ -27,16 +27,16 @@ class Product:
 
 def get_categories() -> (list[Category] | None):
     '''
-    Retreive all categories from the Casarica main page, with BeautifulSoup, parse the HTML, and return a list of Category objects
+    Retreive all categories from the Arete main page, with BeautifulSoup, parse the HTML, and return a list of Category objects
 
     Returns:
         list[Category]: List of Category objects
         None: If error occurs
     '''
     try:
-        response = requests.get('https://casarica.com.py/')
+        response = requests.get('https://www.arete.com.py/')
         if response.status_code == 200:
-            print('[DEBUG] Retreived categories from Casarica main page successfully...')
+            print('[DEBUG] Retreived categories from Arete main page successfully...')
             soup = BeautifulSoup(response.text, 'lxml')
             categories = soup.find_all('ul', id='menu-departments-menu')
             categories_list: list[Category] = []
@@ -46,24 +46,24 @@ def get_categories() -> (list[Category] | None):
                 for li in category.find_all('li', class_=['yamm-tfw_ yamm-hw menu-item menu-item-has-children animate-dropdown dropdown-submenu', 'menu-item animate-dropdown']):
                     a = li.find('a')
                     # Title and href are the name and slug of the category
-                    slug: str = a['href'] if "https://casarica.com.py/" not in a['href'] else urlparse(a['href']).path
+                    slug: str = a['href'] if "https://www.arete.com.py/" not in a['href'] else urlparse(a['href']).path
                     slug = slug[1:] if slug.startswith('/') else slug
                     categories_list.append(Category(
                         name=a['title'].capitalize(), 
                         slug=slug,
-                        url=f'https://casarica.com.py/{slug}'))
+                        url=f'https://www.arete.com.py/{slug}'))
 
             print(f'[DEBUG] {categories_list}')
 
             return categories_list
         
         else:
-            print('[ERROR] Invalid response from Casarica main page...')
+            print('[ERROR] Invalid response from Arete main page...')
             print(response.status_code)
             return None
         
     except Exception as e:
-        print('[ERROR] Failed to retreive categories from Casarica main page...')
+        print('[ERROR] Failed to retreive categories from Arete main page...')
         print(e)
         return None
     
@@ -79,6 +79,8 @@ def mine_products(category: Category) -> (list[Product] | None):
         None: If error occurs
     '''
     products_list: list[Product] = []
+
+    print(f'[DEBUG] Mining {category.name} with URL {category.url} ...')
     
     try:
         page_number = 1
@@ -94,7 +96,7 @@ def mine_products(category: Category) -> (list[Product] | None):
                 # print(f'[DEBUG] Got {len(products)} from {category.url}.{page_number}')
 
                 if len(products) == 0:
-                    print(f'[DEBUG] {len(products_list)} products found in the {category.name} category...')
+                    print(f'[DEBUG] found a total of {len(products_list)} {category.name} category...')
                     return products_list
 
                 # print(f'[DEBUG] {products[0]}')
@@ -104,15 +106,15 @@ def mine_products(category: Category) -> (list[Product] | None):
                     prices = [price.text.replace('₲', '').replace('.', '').strip() for price in product.find_all('span', 'amount')]
                     prices = [price for price in prices if price.isnumeric()]
                     price = min(prices)
-                    image_url = product.find('img')['data-src']
-                    product_url = 'https://casarica.com.py/' + product.find('a', 'ecommercepro-LoopProduct-link')['href']
+                    image_url = product.find('img')['data-src'] if "https://www.arete.com.py/" in product.find('img')['data-src'] else 'https://www.arete.com.py/' + product.find('img')['data-src']
+                    product_url = 'https://www.arete.com.py/' + product.find('a', 'ecommercepro-LoopProduct-link')['href']
                     is_discounted = True if product.find('span', 'onsale') else False
 
                     # Generate a MD5 hash for the product
                     product_md5 = md5(f'{product_url}'.encode()).hexdigest()
                     products_list.append(Product(
                         md5=product_md5,
-                        origin='casarica',
+                        origin='arete',
                         name=unidecode(name).capitalize(),
                         price=int(price.replace('₲', '').replace('.', '')),
                         is_discounted=is_discounted,
@@ -122,14 +124,14 @@ def mine_products(category: Category) -> (list[Product] | None):
                     ))
 
             else:
-                print('[ERROR] Invalid response from Casarica main page...')
+                print(f'[ERROR] Invalid response from {category.url}...')
                 print(response.status_code)
                 return None
 
             page_number += 1
     
     except Exception as e:
-        print('[ERROR] Failed to retreive products from Casarica main page...')
+        print('[ERROR] Failed to retreive products from Arete main page...')
         print(e)
         return None
         
@@ -157,12 +159,12 @@ def main():
                     print('[ERROR] Failed to send products to the API...')
                     print(e)
     else:
-        print('[ERROR] Failed to retreive categories from Casarica main page...')
+        print('[ERROR] Failed to retreive categories from Arete main page...')
 
 
     
 
 if __name__ == '__main__':
-    print("[DEBUG] Running Casarica Miner...")
+    print("[DEBUG] Running Arete Miner...")
     main()
-    print("[DEBUG] Casarica Miner finished...")
+    print("[DEBUG] Arete Miner finished...")
