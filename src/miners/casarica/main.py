@@ -135,29 +135,27 @@ def mine_products(category: Category) -> (list[Product] | None):
         
 
 def main():
-    categories: list[Category] = get_categories()[0:1]
+    categories: list[Category] = get_categories()
 
     if categories:
         products_list: list[Product] = []
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            for category in categories:
-                products_list.extend(executor.submit(mine_products, category).result())
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(mine_products, category) for category in categories]
 
-        print(f"[DEBUG] Total products retreived: {len(products_list)}")
+            for future in concurrent.futures.as_completed(futures):
+                # send a request to the API to save the products
+                try:
+                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()])
+                    if response.status_code == 201:
+                        print('[DEBUG] Products sent to the API...')
+                    else:
+                        print('[ERROR] Failed to send products to the API...')
+                        print(response.status_code)
 
-        # send a request to the API to save the products
-        try:
-            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list])
-            if response.status_code == 201:
-                print('[DEBUG] Products sent to the API...')
-            else:
-                print('[ERROR] Failed to send products to the API...')
-                print(response.status_code)
-
-        except Exception as e:
-            print('[ERROR] Failed to send products to the API...')
-            print(e)
+                except Exception as e:
+                    print('[ERROR] Failed to send products to the API...')
+                    print(e)
     else:
         print('[ERROR] Failed to retreive categories from Casarica main page...')
 
