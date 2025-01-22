@@ -3,6 +3,8 @@ import concurrent.futures
 from dataclasses import dataclass
 from unidecode import unidecode
 from hashlib import md5
+from time import sleep
+import random
 
 @dataclass
 class Category:
@@ -59,10 +61,14 @@ def mine_category(category: Category) -> (list[Product] | None):
         list[Product]: List of Product objects mined from the category
         None: If error occurs
     '''
+    print(f'[DEBUG] Mining products from {category.name} category...')
+
+    sleep(random.randint(0, 5))
+
     products_list: list[Product] = []
     while True:
         try:
-            response = requests.get(f'https://api.app.biggie.com.py/api/articles?take=50&skip={len(products_list)}&classificationName={category.slug}', timeout=20)
+            response = requests.get(f'https://api.app.biggie.com.py/api/articles?take=50&skip={len(products_list)}&classificationName={category.slug}', timeout=120)
             if response.status_code == 200:
                 products = response.json()
                 if products['items']:
@@ -110,7 +116,7 @@ def main():
 
         # send a request to the API to save the products
         try:
-            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list], timeout=20)
+            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list], timeout=120)
             if response.status_code == 201:
                 print('[DEBUG] Products sent to the API...')
             else:

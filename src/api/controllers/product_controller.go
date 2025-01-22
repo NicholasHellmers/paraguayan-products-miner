@@ -19,7 +19,7 @@ var productCollection *mongo.Collection = configs.GetCollection(configs.DB, "pro
 var productValidate = validator.New()
 
 func CreateProduct(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	var product models.Product
 	defer cancel()
 
@@ -63,9 +63,12 @@ func CreateProduct(c *fiber.Ctx) error {
 }
 
 func CreateProducts(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	var products []models.Product
 	defer cancel()
+
+	// remove all repeat products(through md5 hash) in the request body
+	var uniqueProducts map[string]bool = make(map[string]bool)
 
 	//validate the request body
 	if err := c.BodyParser(&products); err != nil {
@@ -96,12 +99,19 @@ func CreateProducts(c *fiber.Ctx) error {
 			CategoryName: product.CategoryName,
 		}
 
+		if _, value := uniqueProducts[newProduct.MD5]; !value {
+			uniqueProducts[newProduct.MD5] = true
+		} else {
+			continue
+		}
+
 		// If one of the products is invalid, return an error
 		if validationErr := productValidate.Struct(&newProduct); validationErr != nil {
 			return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": validationErr.Error()}})
 		}
 
 		// Check if the product already exists via the MD5 hash, if it does, update the product
+
 		var existingProduct models.Product
 		err := productCollection.FindOne(ctx, bson.M{"md5": newProduct.MD5}).Decode(&existingProduct)
 		if err == nil {
@@ -113,6 +123,7 @@ func CreateProducts(c *fiber.Ctx) error {
 		}
 
 		newProducts = append(newProducts, newProduct)
+
 	}
 
 	result, err := productCollection.InsertMany(ctx, newProducts)
@@ -124,7 +135,7 @@ func CreateProducts(c *fiber.Ctx) error {
 }
 
 func GetAProduct(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	productId := c.Params("productId")
 	var product models.Product
 	defer cancel()
@@ -138,7 +149,7 @@ func GetAProduct(c *fiber.Ctx) error {
 }
 
 func GetAllProducts(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	var products []models.Product
 	defer cancel()
 

@@ -7,6 +7,8 @@ from hashlib import md5
 from bs4 import BeautifulSoup
 import json
 import lxml
+from time import sleep
+import random
 
 @dataclass
 class Category:
@@ -78,12 +80,15 @@ def mine_products(category: Category) -> (list[Product] | None):
         list[Product]: List of Product objects mined from the category
         None: If error occurs
     '''
+    print(f'[DEBUG] Mining products from {category.name} category...')
+    sleep(random.randint(0, 5))
+
     products_list: list[Product] = []
     
     try:
         page_number = 1
         while True:
-            response = requests.get(f'{category.url}.{page_number}', timeout=20)
+            response = requests.get(f'{category.url}.{page_number}', timeout=120)
 
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'lxml')
@@ -146,7 +151,7 @@ def main():
             for future in concurrent.futures.as_completed(futures):
                 # send a request to the API to save the products
                 try:
-                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=20)
+                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=120)
                     if response.status_code == 201:
                         print('[DEBUG] Products sent to the API...')
                     else:
