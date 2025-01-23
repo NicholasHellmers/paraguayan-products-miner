@@ -2,7 +2,7 @@ import requests
 import concurrent.futures
 from dataclasses import dataclass
 from unidecode import unidecode
-from hashlib import md5
+from hashlib import sha256
 from time import sleep
 import random
 
@@ -15,7 +15,7 @@ class Category:
 
 @dataclass
 class Product:
-    md5: str
+    id: str
     origin: str
     code: str
     name: str
@@ -50,7 +50,7 @@ def get_categories() -> (list[Category] | None):
         print('[ERROR] Failed to retreive categories from Biggie API...', e)
         return None
     
-def mine_category(category: Category) -> (list[Product] | None):
+def mine_products(category: Category) -> (list[Product] | None):
     '''
     Mine products from a category, operates like a thread function to not overload the API
 
@@ -74,8 +74,8 @@ def mine_category(category: Category) -> (list[Product] | None):
                 if products['items']:
                     for product in products['items']:
                         url: str = f"https://biggie.com.py/item/{unidecode(product['name'].lower()).replace(' ', '-')}-{product['code']}"
-                        md5_code = md5(url.encode()).hexdigest()
-                        products_list.append(Product(md5_code,
+                        sha256_code = sha256(url.encode()).hexdigest()
+                        products_list.append(Product(sha256_code,
                                                      'biggie',
                                                      product['code'], 
                                                      product['name'],
@@ -109,22 +109,24 @@ def main():
         products_list: list[Product] = []
         print('[DEBUG] Mining products from categories...')
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            for category in categories:
-                products_list.extend(executor.submit(mine_category, category).result())
+            futures = [executor.submit(mine_products, category) for category in categories]
 
-        print(f"[DEBUG] Total products retreived: {len(products_list)}")
 
-        # send a request to the API to save the products
-        try:
-            response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in products_list], timeout=120)
-            if response.status_code == 201:
-                print('[DEBUG] Products sent to the API...')
-            else:
-                print('[ERROR] Failed to send products to the API...')
-                print(response.status_code)
-        except Exception as e:
-            print('[ERROR] Failed to send products to the API...')
-            print(e)
+            for future in concurrent.futures.as_completed(futures):
+                print(f"[DEBUG] Total products retreived: {len(future.result())}")
+
+                # send a request to the API to save the products
+                try:
+                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=120)
+                    # print the time it took to send the products
+                    print(f'[DEBUG] Time taken to send products: {response.elapsed.total_seconds()} seconds...')
+                    if response.status_code == 201:
+                        print('[DEBUG] Products sent to the API...')
+                    else:
+                        print('[ERROR] Failed to send products to the API...')
+                        print(response.status_code)
+                except Exception as e:
+                    print('[ERROR] Failed to send products to the API...', e)
 
 
     else:

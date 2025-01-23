@@ -3,7 +3,7 @@ import concurrent.futures
 from urllib.parse import urlparse
 from dataclasses import dataclass
 from unidecode import unidecode
-from hashlib import md5
+from hashlib import sha256
 from bs4 import BeautifulSoup
 import json
 import lxml
@@ -18,7 +18,7 @@ class Category:
 
 @dataclass
 class Product:
-    md5: str
+    id: str
     origin: str
     name: str
     price: int
@@ -114,10 +114,10 @@ def mine_products(category: Category) -> (list[Product] | None):
                     product_url = 'https://www.arete.com.py/' + product.find('a', 'ecommercepro-LoopProduct-link')['href']
                     is_discounted = True if product.find('span', 'onsale') else False
 
-                    # Generate a MD5 hash for the product
-                    product_md5 = md5(f'{product_url}'.encode()).hexdigest()
+                    # Generate a sha256 hash for the product
+                    product_sha256 = sha256(f'{product_url}'.encode()).hexdigest()
                     products_list.append(Product(
-                        md5=product_md5,
+                        id=product_sha256,
                         origin='arete',
                         name=unidecode(name).capitalize(),
                         price=int(price.replace('₲', '').replace('.', '')),
@@ -153,6 +153,7 @@ def main():
                 # send a request to the API to save the products
                 try:
                     response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=120)
+                    print(f'[DEBUG] Time taken to send products: {response.elapsed.total_seconds()} seconds...')
                     if response.status_code == 201:
                         print('[DEBUG] Products sent to the API...')
                     else:
@@ -160,8 +161,7 @@ def main():
                         print(response.status_code)
 
                 except Exception as e:
-                    print('[ERROR] Failed to send products to the API...')
-                    print(e)
+                    print('[ERROR] Failed to send products to the API...', e)
     else:
         print('[ERROR] Failed to retreive categories from Arete main page...')
 

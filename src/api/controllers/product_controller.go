@@ -11,7 +11,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -35,8 +34,7 @@ func CreateProduct(c *fiber.Ctx) error {
 
 	// product_id,code,name,price,is_discounted,image_url,product_url,category_name
 	newProduct := models.Product{
-		Id:           primitive.NewObjectID(),
-		MD5:          product.MD5,
+		Id:           product.Id,
 		Origin:       product.Origin,
 		Name:         product.Name,
 		Code:         product.Code,
@@ -47,9 +45,9 @@ func CreateProduct(c *fiber.Ctx) error {
 		CategoryName: product.CategoryName,
 	}
 
-	// Check if the product already exists via the MD5 hash
+	// Check if the product already exists via the sha256 hash
 	var existingProduct models.Product
-	err := productCollection.FindOne(ctx, bson.M{"md5": newProduct.MD5}).Decode(&existingProduct)
+	err := productCollection.FindOne(ctx, bson.M{"id": newProduct.Id}).Decode(&existingProduct)
 	if err == nil {
 		return c.Status(http.StatusConflict).JSON(responses.ProductResponse{Status: http.StatusConflict, Message: "error", Data: &fiber.Map{"error_message": "Product already exists"}})
 	}
@@ -67,71 +65,61 @@ func CreateProducts(c *fiber.Ctx) error {
 	var products []models.Product
 	defer cancel()
 
-	// remove all repeat products(through md5 hash) in the request body
+	// Remove all duplicate products based on id
 	var uniqueProducts map[string]bool = make(map[string]bool)
 
-	//validate the request body
+	// Validate the request body
 	if err := c.BodyParser(&products); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": err.Error()}})
 	}
 
-	//use the validator library to validate required fields
+	// Validate required fields
 	for _, product := range products {
 		if validationErr := productValidate.Struct(&product); validationErr != nil {
 			return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": validationErr.Error()}})
 		}
 	}
 
-	// product_id,code,name,price,is_discounted,image_url,product_url,category_name
-	var newProducts []interface{}
+	// Prepare products for bulk insert
+	var bulkOps []mongo.WriteModel
 	for _, product := range products {
-
-		newProduct := models.Product{
-			Id:           primitive.NewObjectID(),
-			MD5:          product.MD5,
-			Origin:       product.Origin,
-			Name:         product.Name,
-			Code:         product.Code,
-			Price:        product.Price,
-			IsDiscounted: product.IsDiscounted,
-			ImageUrl:     product.ImageUrl,
-			ProductUrl:   product.ProductUrl,
-			CategoryName: product.CategoryName,
-		}
-
-		if _, value := uniqueProducts[newProduct.MD5]; !value {
-			uniqueProducts[newProduct.MD5] = true
-		} else {
+		// Check for duplicate by id
+		if _, exists := uniqueProducts[product.Id]; exists {
+			// Skip this product if it's already processed
 			continue
 		}
+		uniqueProducts[product.Id] = true
 
-		// If one of the products is invalid, return an error
-		if validationErr := productValidate.Struct(&newProduct); validationErr != nil {
-			return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": validationErr.Error()}})
-		}
-
-		// Check if the product already exists via the MD5 hash, if it does, update the product
-
-		var existingProduct models.Product
-		err := productCollection.FindOne(ctx, bson.M{"md5": newProduct.MD5}).Decode(&existingProduct)
-		if err == nil {
-			_, err := productCollection.UpdateOne(ctx, bson.M{"md5": newProduct.MD5}, bson.M{"$set": newProduct})
-			if err != nil {
-				return c.Status(http.StatusInternalServerError).JSON(responses.ProductResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"error_message": err.Error()}})
-			}
-			continue
-		}
-
-		newProducts = append(newProducts, newProduct)
-
+		// Create the upsert operation
+		bulkOps = append(bulkOps, mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"id": product.Id}). // Match on product id
+			SetUpdate(bson.M{"$set": product}).  // Update fields if document exists
+			SetUpsert(true))                     // If document doesn't exist, insert it
 	}
 
-	result, err := productCollection.InsertMany(ctx, newProducts)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(responses.ProductResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"error_message": err.Error()}})
+	// Execute the bulk write operation if there are any operations
+	if len(bulkOps) > 0 {
+		result, err := productCollection.BulkWrite(ctx, bulkOps)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(responses.ProductResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    &fiber.Map{"error_message": err.Error()},
+			})
+		}
+		return c.Status(http.StatusCreated).JSON(responses.ProductResponse{
+			Status:  http.StatusCreated,
+			Message: "success",
+			Data:    &fiber.Map{"success_message": result},
+		})
 	}
 
-	return c.Status(http.StatusCreated).JSON(responses.ProductResponse{Status: http.StatusCreated, Message: "success", Data: &fiber.Map{"success_message": result}})
+	// Return a response if no valid products were processed
+	return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{
+		Status:  http.StatusBadRequest,
+		Message: "error",
+		Data:    &fiber.Map{"error_message": "no valid products to insert"},
+	})
 }
 
 func GetAProduct(c *fiber.Ctx) error {

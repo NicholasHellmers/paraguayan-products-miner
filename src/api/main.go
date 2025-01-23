@@ -7,7 +7,9 @@ import (
 )
 
 func main() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Concurrency: 4096, // Maximum number of concurrent workers
+	})
 
 	//run database
 	configs.ConnectDB()

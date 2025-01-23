@@ -3,7 +3,7 @@ import concurrent.futures
 from urllib.parse import urlparse
 from dataclasses import dataclass
 from unidecode import unidecode
-from hashlib import md5
+from hashlib import sha256
 from bs4 import BeautifulSoup
 import json
 import lxml
@@ -18,7 +18,7 @@ class Category:
 
 @dataclass
 class Product:
-    md5: str
+    id: str
     origin: str
     name: str
     price: int
@@ -108,10 +108,10 @@ def mine_products(category: Category) -> (list[Product] | None):
                             price = [ price.replace(".","").strip() for price in price if price.replace(".","").strip().isnumeric() ]
                             is_discounted = False if len(price) == 1 else True
                             image_url = product.find('div', class_='thumbnail').find('img')['src']
-                            product_md5 = md5(product_url.encode()).hexdigest()
+                            product_sha256 = sha256(product_url.encode()).hexdigest()
 
                             products_list.append(Product(
-                                md5=product_md5,
+                                id=product_sha256,
                                 origin='tupi',
                                 name=name,
                                 price=int(min(price)),
@@ -155,6 +155,7 @@ def main():
 
                     if result is not None:
                         response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in result], timeout=120)
+                        print(f'[DEBUG] Time taken to send products: {response.elapsed.total_seconds()} seconds...')
                         if response.status_code == 201:
                             print('[DEBUG] Products sent to the API...')
                         else:
@@ -164,8 +165,7 @@ def main():
                         print('[ERROR] No products were mined, none were sent to API...')
 
                 except Exception as e:
-                    print('[ERROR] Failed to send products to the API...')
-                    print(e)
+                    print('[ERROR] Failed to send products to the API...', e)
     else:
         print('[ERROR] No Categories found on the Tupi front page...')
 if __name__ == '__main__':
