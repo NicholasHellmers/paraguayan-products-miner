@@ -11,6 +11,10 @@ Data miner for paraguayan ecommerce products.
     - [ ] Superseis (https://www.superseis.com.py/)[https://www.superseis.com.py/]
     - [ ] Stock (https://www.stock.com.py/)[https://www.stock.com.py/]
     - [ ] Hendyla (https://www.hendyla.com/)[https://www.hendyla.com/]
-    - [ ] Tupi (https://www.tupi.com.py/)[https://www.tupi.com.py/]
+    - [x] Tupi (https://www.tupi.com.py/)[https://www.tupi.com.py/]
+    - [x] González Giménez (https://www.gonzalezgimenez.com/)[https://www.gonzalezgimenez.com/]
+    - [x] Fortis (https://www.fortis.com.py/)[https://www.fortis.com.py/]
+    - [ ] Shopping China (https://www.shoppingchina.com.py/)[https://www.shoppingchina.com.py/]
+    - [ ] Bristol (https://www.bristol.com.py/)[https://www.bristol.com.py/]
 - [x] MongoDB setup
 - [x] Golang API

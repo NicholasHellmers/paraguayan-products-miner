@@ -1,0 +1,8 @@
+requests
+futures
+dataclasses
+pymongo
+unidecode
+urllib3
+lxml
+beautifulsoup4

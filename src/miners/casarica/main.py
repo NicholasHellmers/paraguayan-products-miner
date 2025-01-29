@@ -143,24 +143,36 @@ def main():
     categories: list[Category] = get_categories()
 
     if categories:
-        products_list: list[Product] = []
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            product_tracker: dict[str, Product] = {}
+
             futures = [executor.submit(mine_products, category) for category in categories]
 
             for future in concurrent.futures.as_completed(futures):
-                # send a request to the API to save the products
+                for product in future.result():
+                    if product.id not in product_tracker:
+                        product_tracker[product.id] = product
+                    else:
+                        continue
+
+            print(f"[DEBUG] Found a total of {len(product_tracker)} products from Casarica...")
+
+            for i in range(0, len(product_tracker), 1000):
                 try:
-                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in future.result()], timeout=120)
-                    print(f'[DEBUG] Time taken to send products: {response.elapsed.total_seconds()} seconds...')
+                    print(f"[DEBUG] Uploading products {i} to {i + 1000} to the API...")
+                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in list(product_tracker.values())[i:i+1000]], timeout=120)
+
                     if response.status_code == 201:
                         print('[DEBUG] Products sent to the API...')
                     else:
-                        print('[ERROR] Failed to send products to the API...')
+                        print('[ERROR] Invalid status code from API...')
                         print(response.status_code)
+                        continue
 
                 except Exception as e:
                     print('[ERROR] Failed to send products to the API...', e)
+                    continue
     else:
         print('[ERROR] Failed to retreive categories from Casarica main page...')
 

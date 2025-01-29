@@ -34,15 +34,16 @@ func CreateProduct(c *fiber.Ctx) error {
 
 	// product_id,code,name,price,is_discounted,image_url,product_url,category_name
 	newProduct := models.Product{
-		Id:           product.Id,
-		Origin:       product.Origin,
-		Name:         product.Name,
-		Code:         product.Code,
-		Price:        product.Price,
-		IsDiscounted: product.IsDiscounted,
-		ImageUrl:     product.ImageUrl,
-		ProductUrl:   product.ProductUrl,
-		CategoryName: product.CategoryName,
+		Id:             product.Id,
+		Origin:         product.Origin,
+		Name:           product.Name,
+		Code:           product.Code,
+		Price:          product.Price,
+		MayoristaPrice: product.MayoristaPrice,
+		IsDiscounted:   product.IsDiscounted,
+		ImageUrl:       product.ImageUrl,
+		ProductUrl:     product.ProductUrl,
+		CategoryName:   product.CategoryName,
 	}
 
 	// Check if the product already exists via the sha256 hash
