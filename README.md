@@ -4,6 +4,7 @@ Data miner for paraguayan ecommerce products.
 ## Requirements
 - Docker
 - Make
+- Go
 
 ## How to run
 1. Clone the repository
@@ -23,6 +24,11 @@ Data miner for paraguayan ecommerce products.
 4. To clean the project, run the following command:
     ```bash
     make clean
+    ```
+
+5. If you're having issues with setting up the API:
+    ```bash
+    go mod tidy
     ```
 
 ## Todo
