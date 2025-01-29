@@ -1,5 +1,25 @@
 version: '3.9'
 services:
+  miner_superseis:
+    env_file: .env
+    build: ./src/miners/superseis
+    volumes:
+      - ./src/miners/superseis:/app
+    networks:
+      - miner-app
+    depends_on:
+      - mongo
+    command: bash -c "while ! curl -s http://api:8080/; do sleep 5; done; python3 -u main.py"
+  miner_stock:
+    env_file: .env
+    build: ./src/miners/stock
+    volumes:
+      - ./src/miners/stock:/app
+    networks:
+      - miner-app
+    depends_on:
+      - mongo
+    command: bash -c "while ! curl -s http://api:8080/; do sleep 5; done; python3 -u main.py"
   miner_fortis:
     env_file: .env
     build: ./src/miners/fortis

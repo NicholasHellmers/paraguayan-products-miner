@@ -39,7 +39,7 @@ Data miner for paraguayan ecommerce products.
     - [x] Areté - [https://www.arete.com.py/](https://www.arete.com.py/)
     - [ ] Nissei - [https://nissei.com/py/](https://nissei.com/py/)
     - [ ] Superseis - [https://www.superseis.com.py/](https://www.superseis.com.py/)
-    - [ ] Stock - [https://www.stock.com.py/](https://www.stock.com.py/)
+    - [x] Stock - [https://www.stock.com.py/](https://www.stock.com.py/)
     - [ ] Hendyla - [https://www.hendyla.com/](https://www.hendyla.com/)
     - [x] Tupi - [https://www.tupi.com.py/](https://www.tupi.com.py/)
     - [x] González Giménez - [https://www.gonzalezgimenez.com/](https://www.gonzalezgimenez.com/)
