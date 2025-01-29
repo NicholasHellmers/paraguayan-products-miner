@@ -28,4 +28,4 @@ go.work.sum
 *.csv
 
 # init data files
-/src/mongo-data/*
+/src/mongo-data/init.js
