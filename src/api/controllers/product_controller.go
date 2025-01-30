@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var productCollection *mongo.Collection = configs.GetCollection(configs.DB, "products")
@@ -32,7 +33,6 @@ func CreateProduct(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(responses.ProductResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"error_message": validationErr.Error()}})
 	}
 
-	// product_id,code,name,price,is_discounted,image_url,product_url,category_name
 	newProduct := models.Product{
 		Id:             product.Id,
 		Origin:         product.Origin,
@@ -91,16 +91,16 @@ func CreateProducts(c *fiber.Ctx) error {
 		}
 		uniqueProducts[product.Id] = true
 
-		// Create the upsert operation
-		bulkOps = append(bulkOps, mongo.NewUpdateOneModel().
-			SetFilter(bson.M{"id": product.Id}). // Match on product id
-			SetUpdate(bson.M{"$set": product}).  // Update fields if document exists
-			SetUpsert(true))                     // If document doesn't exist, insert it
+		// Use bson.D for better MongoDB query optimization
+		filter := bson.D{{Key: "id", Value: product.Id}}
+		update := bson.D{{Key: "$set", Value: product}} // Partial update only
+		upsert := mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(true)
+		bulkOps = append(bulkOps, upsert)
 	}
 
-	// Execute the bulk write operation if there are any operations
+	// Execute bulk operation only if there are valid updates
 	if len(bulkOps) > 0 {
-		result, err := productCollection.BulkWrite(ctx, bulkOps)
+		result, err := productCollection.BulkWrite(ctx, bulkOps, options.BulkWrite().SetOrdered(false)) // Allow unordered execution
 		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(responses.ProductResponse{
 				Status:  http.StatusInternalServerError,
