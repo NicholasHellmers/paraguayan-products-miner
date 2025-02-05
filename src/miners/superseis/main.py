@@ -117,6 +117,7 @@ def mine_products(category: Category) -> (list[Product] | None):
             else:
                 print(f'[ERROR] Invalid response from {category.name} category...')
                 print(response.status_code)
+                return None
 
             page_number += 1
 
@@ -127,7 +128,7 @@ def mine_products(category: Category) -> (list[Product] | None):
 
 
 def main():
-    categories: list[Category] = get_categories()[:10]
+    categories: list[Category] = get_categories()
 
     categories = sorted(categories, key=lambda x: x.slug, reverse=True)
 

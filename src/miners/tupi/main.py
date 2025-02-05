@@ -144,30 +144,41 @@ def main():
 
     if categories is not None:
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            product_tracker: dict[str, Product] = {}
+
             futures = [executor.submit(mine_products, category) for category in categories]
 
             for future in concurrent.futures.as_completed(futures):
-                # Send a request to the API to save the products
-                try:
-                    result = future.result()
+                print(f"[DEBUG] Results from search {len(future.result()) if future.result() is not None else 0} products...")
 
-                    print(f"[DEBUG] Total products retreived: {len(result)}")
-
-                    if result is not None:
-                        response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in result], timeout=120)
-                        print(f'[DEBUG] Time taken to send products: {response.elapsed.total_seconds()} seconds...')
-                        if response.status_code == 201:
-                            print('[DEBUG] Products sent to the API...')
+                if future.result() is not None:
+                    for product in future.result():
+                        if product.id not in product_tracker:
+                            product_tracker[product.id] = product
                         else:
-                            print('[ERROR] Failed to send products to the API...')
-                            print(response.status_code)
-                    else:
-                        print('[ERROR] No products were mined, none were sent to API...')
+                            continue
 
+            print(f"[DEBUG] Found a total of {len(product_tracker)} products from Superseis...")
+
+            # upload to api, 1000 products at a time
+            for i in range(0, len(product_tracker), 1000):
+                try:
+                    print(f"[DEBUG] Sending {i} to {i+1000} products to the API...")
+                    response = requests.post('http://api:8080/products/', json=[product.__dict__ for product in list(product_tracker.values())[i:i+1000]], timeout=120)
+
+                    if response.status_code == 201:
+                        print('[DEBUG] Products sent to the API...')
+                    else:
+                        print('[ERROR] Invalid status code from API...')
+                        print(response.status_code)
+                        continue
                 except Exception as e:
                     print('[ERROR] Failed to send products to the API...', e)
+                    continue
+                    
     else:
-        print('[ERROR] No Categories found on the Tupi front page...')
+        print('[ERROR] No Categories found on the Superseis front page...')
+        
 if __name__ == '__main__':
     print("[DEBUG] Running Tupi Miner...")
     main()
