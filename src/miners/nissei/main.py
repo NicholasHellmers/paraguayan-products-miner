@@ -71,7 +71,6 @@ def mine_products(category: Category) -> (list[Product] | None):
         list[Product]: List of Product objects mined from the category
         None: If error occurs
     '''
-    pass
     print(f'[DEBUG] Mining products from {category.name} category...')
     try:
         category_products: list[Product] = []
